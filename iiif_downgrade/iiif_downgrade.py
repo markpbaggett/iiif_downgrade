@@ -41,7 +41,7 @@ class IIIFv3toV2Converter:
             ],
         }
         if v3.get("behavior", "") != "":
-            self.v2_manifest["viewingHint"] = v3.get("behavior")
+            self.v2_manifest["viewingHint"] = v3.get("behavior")[0]
 
         return self.v2_manifest
 
