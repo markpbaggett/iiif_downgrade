@@ -40,6 +40,12 @@ class IIIFv3toV2Converter:
                 }
             ],
         }
+        first_canvas = v3.get("items", [None])[0]
+        if first_canvas and "thumbnail" in first_canvas:
+            thumb = self._thumbnail_to_v2(first_canvas["thumbnail"])
+            if thumb:
+                self.v2_manifest["thumbnail"] = thumb
+
         if v3.get("behavior", "") != "":
             self.v2_manifest["viewingHint"] = v3.get("behavior")[0]
 
@@ -104,6 +110,44 @@ class IIIFv3toV2Converter:
                     }
                 )
         return images
+
+    def _thumbnail_to_v2(self, v3_thumbnail):
+        """
+        Convert a IIIF v3 thumbnail object to IIIF v2 format.
+
+        Example v3 format:
+        {
+          "id": ".../full/!200,200/0/default.jpg",
+          "type": "Image",
+          "format": "image/jpeg",
+          "service": [{
+             "id": "...",
+             "type": "ImageService3",
+             "profile": "level1"
+          }]
+        }
+        """
+        if not v3_thumbnail:
+            return None
+
+        if isinstance(v3_thumbnail, list):
+            v3_thumbnail = v3_thumbnail[0]
+
+        service = None
+        if "service" in v3_thumbnail and v3_thumbnail["service"]:
+            svc = v3_thumbnail["service"][0]
+            service = {
+                "label": svc.get("label", "IIIF Image Service"),
+                "profile": "http://iiif.io/api/image/2/level0.json",
+                "@context": "http://iiif.io/api/image/2/context.json",
+                "@id": svc.get("id")
+            }
+
+        return {
+            "@id": v3_thumbnail.get("id"),
+            "service": service
+        }
+
 
 
 if __name__ == "__main__":
