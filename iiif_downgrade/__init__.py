@@ -1,1 +1,1 @@
-from .iiif_downgrade import IIIFv3toV2Converter
+from .converter import IIIFv3toV2Converter as IIIFv3toV2Converter
