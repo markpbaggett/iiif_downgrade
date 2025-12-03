@@ -159,7 +159,7 @@ if __name__ == "__main__":
         manifest_id="https://example.org/manifest/v2/123.json"
     )
 
-    v2 = converter.convert()
+    converter.convert()
     converter.save("manifest-v2.json")
 
     print("Done!")
