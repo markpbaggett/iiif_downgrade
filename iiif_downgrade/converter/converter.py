@@ -40,6 +40,11 @@ class IIIFv3toV2Converter:
                 }
             ],
         }
+        if "structures" in v3 and v3["structures"]:
+            ranges = self._structures_to_v2(v3["structures"])
+            if ranges:
+                self.v2_manifest["structures"] = ranges
+
         first_canvas = v3.get("items", [None])[0]
         if first_canvas and "thumbnail" in first_canvas:
             thumb = self._thumbnail_to_v2(first_canvas["thumbnail"])
@@ -148,10 +153,67 @@ class IIIFv3toV2Converter:
             "service": service
         }
 
+    def _structures_to_v2(self, structures):
+        """
+        Convert IIIF v3 structures to IIIF v2 ranges.
+
+        v3 structures are Range objects that organize canvases hierarchically.
+        v2 uses the 'structures' property with sc:Range type.
+        """
+        if not structures:
+            return []
+
+        ranges = []
+        for structure in structures:
+            range_obj = self._convert_single_range(structure)
+            if range_obj:
+                ranges.append(range_obj)
+
+        return ranges
+
+    def _convert_single_range(self, structure):
+        """
+        Recursively convert a single Range object from v3 to v2.
+        """
+        range_obj = {
+            "@id": structure.get("id"),
+            "@type": "sc:Range",
+            "label": self._label_to_v2(structure.get("label")),
+        }
+
+        if "behavior" in structure:
+            behaviors = structure["behavior"]
+            if isinstance(behaviors, list) and behaviors:
+                range_obj["viewingHint"] = behaviors[0]
+
+        if "items" in structure:
+            canvases = []
+            nested_ranges = []
+
+            for item in structure["items"]:
+                item_type = item.get("type", "")
+
+                if item_type == "Canvas":
+                    canvases.append(item.get("id"))
+                elif item_type == "Range":
+                    nested_range = self._convert_single_range(item)
+                    if nested_range:
+                        nested_ranges.append(nested_range)
+                elif item_type == "SpecificResource":
+                    source = item.get("source", {})
+                    if source.get("type") == "Canvas":
+                        canvases.append(source.get("id"))
+
+            if canvases:
+                range_obj["canvases"] = canvases
+            if nested_ranges:
+                range_obj["ranges"] = nested_ranges
+
+        return range_obj
 
 
 if __name__ == "__main__":
-    with open("fixtures/0e9016f7-f9dd-413f-b671-f75d181cbb5e.json") as f:
+    with open("fixtures/with_ranges.json") as f:
         data = json.load(f)
 
     converter = IIIFv3toV2Converter(
@@ -160,6 +222,6 @@ if __name__ == "__main__":
     )
 
     converter.convert()
-    converter.save("manifest-v2.json")
+    converter.save("manifest-v2-with-ranges.json")
 
     print("Done!")
