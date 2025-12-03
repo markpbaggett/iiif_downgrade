@@ -28,12 +28,18 @@ converter = IIIFv3toV2Converter(
     manifest_id="https://example.org/manifest/v2/123.json"
 )
 
-v2 = converter.convert()
+converter.convert()
 converter.save("manifest-v2.json")
 ```
 
 As a command line utility:
 
 ```
-Coming soon.
+iiif_downgrade convert_directory -i fixtures
+```
+
+You can also find and replace ids and write to a specific directory:
+
+```
+iiif_downgrade convert_directory -i fixtures -o output --id_find "/manifest/" --id_replace "/v2_manifest/" 
 ```
